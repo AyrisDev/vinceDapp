@@ -22,6 +22,45 @@ type AppPropsWithLayout = AppProps & {
   Component: NextPageWithLayout;
 };
 
+import '@rainbow-me/rainbowkit/styles.css';
+
+import {
+  getDefaultWallets,
+  RainbowKitProvider,
+  Theme,
+  darkTheme,
+} from '@rainbow-me/rainbowkit';
+import { chain, configureChains, createClient, WagmiConfig } from 'wagmi';
+import { publicProvider } from 'wagmi/providers/public';
+import { mainnet, polygon } from 'wagmi/chains';
+
+import { vinceChain } from '@/hooks/chains';
+
+import merge from 'lodash-es/merge';
+const rainbowkitTheme = merge(darkTheme(), {
+  colors: {
+    accentColor: 'var(--blue-link)',
+  },
+  fonts: {
+    body: "'Space Grotesk', sans-serif",
+  },
+} as Theme);
+
+const { chains, provider } = configureChains(
+  [mainnet, vinceChain],
+  [publicProvider()]
+);
+
+const { connectors } = getDefaultWallets({
+  appName: 'My RainbowKit App',
+  chains,
+});
+
+const wagmiClient = createClient({
+  connectors,
+  provider,
+});
+
 // const firaCode = Fira_Code({
 //   weight: ['400', '500', '700'],
 //   style: ['normal'],
@@ -47,17 +86,19 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
         <ThemeProvider
           attribute="class"
           enableSystem={false}
-          defaultTheme="light"
+          defaultTheme="dark"
         >
-          <WalletProvider>
-            {/* <div className={`${firaCode.variable} font-body`}> */}
-            {getLayout(<Component {...pageProps} />)}
-            <SettingsButton />
-            <SettingsDrawer />
-            <ModalsContainer />
-            <DrawersContainer />
-            {/* </div> */}
-          </WalletProvider>
+          <WagmiConfig client={wagmiClient}>
+            <RainbowKitProvider chains={chains} theme={rainbowkitTheme}>
+              {/* <div className={`${firaCode.variable} font-body`}> */}
+              {getLayout(<Component {...pageProps} />)}
+              <SettingsButton />
+              <SettingsDrawer />
+              <ModalsContainer />
+              <DrawersContainer />
+              {/* </div> */}
+            </RainbowKitProvider>
+          </WagmiConfig>
         </ThemeProvider>
       </QueryClientProvider>
     </>
